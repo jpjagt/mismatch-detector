@@ -13,6 +13,10 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
     salesforceFirstRow: salesforceData[0],
     incomingFirstRow: incomingData[0]
   });
+
+  // Create debug tables
+  console.table('Salesforce Data Sample (First 5 rows):', salesforceData.slice(0, 5));
+  console.table('Incoming Data Sample (First 5 rows):', incomingData.slice(0, 5));
   
   const results: ComparisonResult[] = [];
   const productMappings = getProductMapping();
@@ -21,12 +25,13 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
   incomingData.forEach(incoming => {
     const salesforce = salesforceData.find(sf => {
       const sfPolicyNum = sf['Policy #']?.trim();
-      const incomingAppId = incoming.ApplicationID?.trim();
-      return sfPolicyNum === incomingAppId;
+      const incomingPolicyId = incoming.PolicyId?.trim() || incoming.ApplicationID?.trim();
+      console.log('Comparing policy numbers:', { sfPolicyNum, incomingPolicyId });
+      return sfPolicyNum === incomingPolicyId;
     });
     
     if (!salesforce) {
-      console.log('No matching Salesforce record found for ApplicationID:', incoming.ApplicationID);
+      console.log('No matching Salesforce record found for PolicyId:', incoming.PolicyId || incoming.ApplicationID);
       return;
     }
 
@@ -41,11 +46,13 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
 
     console.log('Comparing records:', {
       salesforce: {
+        policyNum: salesforce['Policy #'],
         premium: salesforcePremium,
         status: salesforceStatus,
         product: salesforceProduct
       },
       incoming: {
+        policyId: incoming.PolicyId || incoming.ApplicationID,
         premium: incomingPremium,
         status: incomingStatus,
         product: `${incomingProductType}${incomingTieredRisk ? ' + ' + incomingTieredRisk : ''}`
@@ -76,7 +83,7 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
 
     if (statusMismatch || productMismatch || premiumMismatch) {
       results.push({
-        policyId: incoming.ApplicationID,
+        policyId: incoming.PolicyId || incoming.ApplicationID,
         salesforceStatus: salesforceStatus,
         incomingStatus: incomingStatus,
         salesforcePremium: salesforcePremium,
