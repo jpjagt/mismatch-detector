@@ -1,3 +1,4 @@
+import Papa from 'papaparse';
 import { CSVData, ComparisonResult } from './types';
 import { getProductMapping, getStatusMapping } from './mappingUtils';
 import { parseSalesforceCSV } from './salesforceCsvParser';
