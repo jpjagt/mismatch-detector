@@ -102,23 +102,22 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
 
     const premiumMismatch = Math.abs(sfPremiumValue - inPremiumValue) > 0.01;
 
-    if (statusMismatch || productMismatch || premiumMismatch) {
-      results.push({
-        policyId: incoming.PolicyId || incoming.ApplicationID,
-        salesforceStatus: salesforceStatus,
-        incomingStatus: incomingStatus,
-        salesforcePremium: salesforcePremium,
-        incomingPremium: incomingPremium,
-        salesforceProduct: salesforceProduct,
-        incomingProduct: incomingProductType + (incomingTieredRisk ? ` + ${incomingTieredRisk}` : ''),
-        statusMismatch,
-        premiumMismatch,
-        productMismatch
-      });
-    }
+    // Always add the record to results, regardless of whether there are mismatches
+    results.push({
+      policyId: incoming.PolicyId || incoming.ApplicationID,
+      salesforceStatus: salesforceStatus,
+      incomingStatus: incomingStatus,
+      salesforcePremium: salesforcePremium,
+      incomingPremium: incomingPremium,
+      salesforceProduct: salesforceProduct,
+      incomingProduct: incomingProductType + (incomingTieredRisk ? ` + ${incomingTieredRisk}` : ''),
+      statusMismatch,
+      premiumMismatch,
+      productMismatch
+    });
   });
 
-  console.log('Comparison complete. Found mismatches:', results.length);
+  console.log('Comparison complete. Total records:', results.length);
   return results;
 };
 
