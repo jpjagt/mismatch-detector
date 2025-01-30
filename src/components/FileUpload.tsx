@@ -1,14 +1,17 @@
 import { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Card } from '@/components/ui/card';
-import { Upload } from 'lucide-react';
+import { Upload, CheckCircle2, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
   label: string;
+  uploadedFileName?: string;
+  onReset?: () => void;
 }
 
-export const FileUpload = ({ onFileSelect, label }: FileUploadProps) => {
+export const FileUpload = ({ onFileSelect, label, uploadedFileName, onReset }: FileUploadProps) => {
   const onDrop = useCallback((acceptedFiles: File[]) => {
     if (acceptedFiles.length > 0) {
       onFileSelect(acceptedFiles[0]);
@@ -20,8 +23,35 @@ export const FileUpload = ({ onFileSelect, label }: FileUploadProps) => {
     accept: {
       'text/csv': ['.csv']
     },
-    multiple: false
+    multiple: false,
+    disabled: !!uploadedFileName
   });
+
+  if (uploadedFileName) {
+    return (
+      <Card className="p-6 border bg-green-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <div>
+              <p className="font-medium text-green-800">{label}</p>
+              <p className="text-sm text-green-600">{uploadedFileName}</p>
+            </div>
+          </div>
+          {onReset && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onReset}
+              className="text-green-700 hover:text-green-800 hover:bg-green-100"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card

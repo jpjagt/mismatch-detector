@@ -4,19 +4,22 @@ import { ConfigPanel } from '@/components/ConfigPanel';
 import { ResultsTable } from '@/components/ResultsTable';
 import { parseCSV, compareData } from '@/lib/csvUtils';
 import { ComparisonResult, CSVData } from '@/lib/types';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const [salesforceData, setSalesforceData] = useState<CSVData[]>([]);
   const [incomingData, setIncomingData] = useState<CSVData[]>([]);
   const [results, setResults] = useState<ComparisonResult[]>([]);
+  const [salesforceFile, setSalesforceFile] = useState<string>();
+  const [incomingFile, setIncomingFile] = useState<string>();
   const { toast } = useToast();
 
   const handleSalesforceFile = async (file: File) => {
     try {
       const data = await parseCSV(file);
       setSalesforceData(data);
+      setSalesforceFile(file.name);
       toast({
         title: "Salesforce file uploaded",
         description: `${data.length} records loaded successfully.`
@@ -38,6 +41,7 @@ const Index = () => {
     try {
       const data = await parseCSV(file);
       setIncomingData(data);
+      setIncomingFile(file.name);
       toast({
         title: "Incoming file uploaded",
         description: `${data.length} records loaded successfully.`
@@ -53,6 +57,18 @@ const Index = () => {
         variant: "destructive"
       });
     }
+  };
+
+  const resetSalesforce = () => {
+    setSalesforceData([]);
+    setSalesforceFile(undefined);
+    setResults([]);
+  };
+
+  const resetIncoming = () => {
+    setIncomingData([]);
+    setIncomingFile(undefined);
+    setResults([]);
   };
 
   return (
@@ -71,10 +87,14 @@ const Index = () => {
               <FileUpload
                 onFileSelect={handleSalesforceFile}
                 label="Upload Salesforce Data"
+                uploadedFileName={salesforceFile}
+                onReset={resetSalesforce}
               />
               <FileUpload
                 onFileSelect={handleIncomingFile}
                 label="Upload Incoming Data"
+                uploadedFileName={incomingFile}
+                onReset={resetIncoming}
               />
             </div>
             

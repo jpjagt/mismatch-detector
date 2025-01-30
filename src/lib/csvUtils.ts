@@ -24,31 +24,26 @@ const findHeaderRow = (rows: string[][]): number => {
   return 0; // Default to first row if no headers found
 };
 
-export const parseCSV = (file: File): Promise<CSVData[]> => {
+export const parseCSV = async (file: File): Promise<CSVData[]> => {
+  // First read the file to find the header row
+  const firstPassText = await file.text();
+  const firstPassResults = Papa.parse(firstPassText, { header: false });
+  const headerRowIndex = findHeaderRow(firstPassResults.data as string[][]);
+
+  // Create a new File object with the correct starting point
+  const rows = firstPassText.split('\n');
+  const relevantRows = rows.slice(headerRowIndex);
+  const newFileContent = relevantRows.join('\n');
+  const newFile = new File([newFileContent], file.name, { type: file.type });
+
   return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      header: false, // We'll handle headers manually
+    Papa.parse(newFile, {
+      header: true,
+      transform: (value) => value.trim(),
+      skipEmptyLines: true,
+      transformHeader: (header) => header.trim(),
       complete: (results) => {
-        const headerRowIndex = findHeaderRow(results.data as string[][]);
-        
-        // Re-parse with the correct header row
-        Papa.parse(file, {
-          header: true,
-          transform: (value) => value.trim(),
-          skipEmptyLines: true,
-          transformHeader: (header) => header.trim(),
-          beforeFirstChunk: (chunk) => {
-            const rows = chunk.split('\n');
-            // Remove any rows before the header
-            return rows.slice(headerRowIndex).join('\n');
-          },
-          complete: (finalResults) => {
-            resolve(finalResults.data as CSVData[]);
-          },
-          error: (error) => {
-            reject(error);
-          }
-        });
+        resolve(results.data as CSVData[]);
       },
       error: (error) => {
         reject(error);
