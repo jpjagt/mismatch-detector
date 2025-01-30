@@ -9,7 +9,9 @@ export { parseSalesforceCSV, parseIncomingCSV };
 export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]): ComparisonResult[] => {
   console.log('Starting comparison with:', {
     salesforceCount: salesforceData.length,
-    incomingCount: incomingData.length
+    incomingCount: incomingData.length,
+    salesforceFirstRow: salesforceData[0],
+    incomingFirstRow: incomingData[0]
   });
   
   const results: ComparisonResult[] = [];
@@ -17,55 +19,71 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
   const statusMappings = getStatusMapping();
 
   incomingData.forEach(incoming => {
-    // Changed to use "Policy #" and "ApplicationID" for matching
-    const salesforce = salesforceData.find(sf => sf['Policy #'] === incoming.ApplicationID);
+    const salesforce = salesforceData.find(sf => {
+      const sfPolicyNum = sf['Policy #']?.trim();
+      const incomingAppId = incoming.ApplicationID?.trim();
+      console.log('Comparing:', { sfPolicyNum, incomingAppId });
+      return sfPolicyNum === incomingAppId;
+    });
     
     if (!salesforce) {
       console.log('No matching Salesforce record found for ApplicationID:', incoming.ApplicationID);
       return;
     }
 
-    console.log('Comparing records for ApplicationID:', incoming.ApplicationID, {
+    // Get values with proper null checks
+    const salesforceStatus = salesforce.ApplicationStatus?.trim() || '';
+    const incomingStatus = incoming.Status?.trim() || '';
+    const salesforcePremium = salesforce.PremiumIssued?.trim() || '$0';
+    const incomingPremium = incoming.PremiumAmount?.trim() || '$0';
+    const salesforceProduct = salesforce.ProductIssued?.trim() || '';
+    const incomingProductType = incoming.ProductType?.trim() || '';
+    const incomingTieredRisk = incoming.TieredRisk?.trim() || '';
+
+    console.log('Comparing records:', {
       salesforce: {
-        premium: salesforce.PremiumIssued,
-        status: salesforce.ApplicationStatus,
-        product: salesforce.ProductIssued
+        premium: salesforcePremium,
+        status: salesforceStatus,
+        product: salesforceProduct
       },
       incoming: {
-        premium: incoming.PremiumAmount,
-        status: incoming.Status,
-        product: incoming.ProductType
+        premium: incomingPremium,
+        status: incomingStatus,
+        product: `${incomingProductType}${incomingTieredRisk ? ' + ' + incomingTieredRisk : ''}`
       }
     });
 
-    // Safely parse premium values with fallback to 0
-    const salesforcePremium = salesforce.PremiumIssued ? 
-      parseFloat((salesforce.PremiumIssued || '').replace(/[$,]/g, '')) || 0 : 0;
-    const incomingPremium = incoming.PremiumAmount ? 
-      parseFloat((incoming.PremiumAmount || '').replace(/[$,]/g, '')) || 0 : 0;
+    // Parse premium values with proper error handling
+    const sfPremiumValue = parseFloat((salesforcePremium || '').replace(/[$,]/g, '')) || 0;
+    const inPremiumValue = parseFloat((incomingPremium || '').replace(/[$,]/g, '')) || 0;
 
-    // Check status - first check exact match, then try mappings
-    const statusMismatch = salesforce.ApplicationStatus !== incoming.Status && 
-      !statusMappings.some(m => m.salesforce === salesforce.ApplicationStatus && m.incoming === incoming.Status);
+    // Check status mapping
+    const statusMismatch = salesforceStatus !== incomingStatus && 
+      !statusMappings.some(m => 
+        m.salesforce.toLowerCase() === salesforceStatus.toLowerCase() && 
+        m.incoming.toLowerCase() === incomingStatus.toLowerCase()
+      );
 
-    // Construct incoming product string
-    const incomingProductFull = `${incoming.ProductType || ''}${incoming.TieredRisk ? ' + ' + incoming.TieredRisk : ''}`;
+    // Construct and compare product strings
+    const incomingProductFull = `${incomingProductType}${incomingTieredRisk ? ' + ' + incomingTieredRisk : ''}`;
     
-    // Check product - first check exact match, then try mappings
-    const productMismatch = salesforce.ProductIssued !== incomingProductFull && 
-      !productMappings.some(m => m.salesforce === salesforce.ProductIssued && m.incoming === incomingProductFull);
+    const productMismatch = salesforceProduct !== incomingProductFull && 
+      !productMappings.some(m => 
+        m.salesforce.toLowerCase() === salesforceProduct.toLowerCase() && 
+        m.incoming.toLowerCase() === incomingProductFull.toLowerCase()
+      );
 
-    const premiumMismatch = Math.abs(salesforcePremium - incomingPremium) > 0.01;
+    const premiumMismatch = Math.abs(sfPremiumValue - inPremiumValue) > 0.01;
 
     if (statusMismatch || productMismatch || premiumMismatch) {
       results.push({
-        policyId: incoming.ApplicationID, // Changed to use ApplicationID consistently
-        salesforceStatus: salesforce.ApplicationStatus || '',
-        incomingStatus: incoming.Status || '',
-        salesforcePremium: salesforce.PremiumIssued || '$0',
-        incomingPremium: incoming.PremiumAmount || '$0',
-        salesforceProduct: salesforce.ProductIssued || '',
-        incomingProduct: incomingProductFull || '',
+        policyId: incoming.ApplicationID,
+        salesforceStatus: salesforceStatus,
+        incomingStatus: incomingStatus,
+        salesforcePremium: salesforcePremium,
+        incomingPremium: incomingPremium,
+        salesforceProduct: salesforceProduct,
+        incomingProduct: incomingProductFull,
         statusMismatch,
         premiumMismatch,
         productMismatch
