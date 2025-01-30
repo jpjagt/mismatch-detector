@@ -17,13 +17,15 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
   const statusMappings = getStatusMapping();
 
   incomingData.forEach(incoming => {
-    const salesforce = salesforceData.find(sf => sf.PolicyId === incoming.PolicyId);
+    // Changed to use "Policy #" and "ApplicationID" for matching
+    const salesforce = salesforceData.find(sf => sf['Policy #'] === incoming.ApplicationID);
+    
     if (!salesforce) {
-      console.log('No matching Salesforce record found for PolicyId:', incoming.PolicyId);
+      console.log('No matching Salesforce record found for ApplicationID:', incoming.ApplicationID);
       return;
     }
 
-    console.log('Comparing records for PolicyId:', incoming.PolicyId, {
+    console.log('Comparing records for ApplicationID:', incoming.ApplicationID, {
       salesforce: {
         premium: salesforce.PremiumIssued,
         status: salesforce.ApplicationStatus,
@@ -57,7 +59,7 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
 
     if (statusMismatch || productMismatch || premiumMismatch) {
       results.push({
-        policyId: incoming.PolicyId,
+        policyId: incoming.ApplicationID, // Changed to use ApplicationID consistently
         salesforceStatus: salesforce.ApplicationStatus || '',
         incomingStatus: incoming.Status || '',
         salesforcePremium: salesforce.PremiumIssued || '$0',
