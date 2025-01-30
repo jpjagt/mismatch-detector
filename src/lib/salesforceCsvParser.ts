@@ -14,7 +14,7 @@ const findHeaderRow = (rows: string[][]): number => {
     const rowHeaders = row.map(header => header?.toLowerCase()?.trim() || '');
     console.log(`Checking row ${i} headers:`, rowHeaders);
 
-    // Check if this row contains "Policy #" as this is a key identifier
+    // Check if this row contains "policy" and "#" in any case combination
     if (rowHeaders.some(header => header.includes('policy') && header.includes('#'))) {
       console.log('Found Salesforce headers at row:', i);
       return i;
