@@ -6,10 +6,13 @@ const EXPECTED_HEADERS = ['PolicyId', 'ApplicationStatus', 'PremiumIssued', 'Pro
 const findHeaderRow = (rows: string[][]): number => {
   console.log('Searching for Salesforce headers in first 20 rows:', rows.slice(0, 3));
   
-  // Search through first 20 rows
+  // Search through first 20 rows, skipping empty rows
   for (let i = 0; i < Math.min(20, rows.length); i++) {
     const row = rows[i];
-    if (!row || row.length === 0) continue;
+    if (!row || row.length === 0 || row.every(cell => !cell)) {
+      console.log(`Skipping empty row ${i}`);
+      continue;
+    }
 
     const rowHeaders = row.map(header => header?.toLowerCase()?.trim() || '');
     console.log(`Checking row ${i} headers:`, rowHeaders);
@@ -47,16 +50,16 @@ export const parseSalesforceCSV = async (file: File): Promise<CSVData[]> => {
     // First find the header row
     const firstPass = Papa.parse(fileContent, { 
       header: false,
-      skipEmptyLines: 'greedy'
+      skipEmptyLines: true // Changed to true to skip empty lines during initial parsing
     });
     
     const headerRowIndex = findHeaderRow(firstPass.data as string[][]);
 
-    // Split content into lines and slice from the header row
-    const lines = fileContent.split('\n');
+    // Split content into lines and filter out empty lines
+    const lines = fileContent.split('\n').filter(line => line.trim());
     const relevantLines = lines.slice(headerRowIndex);
     
-    // Join the relevant lines back together, ensuring we maintain proper line endings
+    // Join the relevant lines back together
     const relevantContent = relevantLines.join('\n');
 
     console.log('Parsing Salesforce CSV with headers starting at row:', headerRowIndex);
@@ -64,7 +67,7 @@ export const parseSalesforceCSV = async (file: File): Promise<CSVData[]> => {
     
     Papa.parse(relevantContent, {
       header: true,
-      skipEmptyLines: 'greedy',
+      skipEmptyLines: true, // Changed to true to skip empty lines during final parsing
       transform: (value) => value.trim(),
       transformHeader: (header) => header.trim(),
       complete: (results) => {
