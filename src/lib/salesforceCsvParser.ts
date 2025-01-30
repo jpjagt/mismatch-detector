@@ -51,12 +51,16 @@ export const parseSalesforceCSV = async (file: File): Promise<CSVData[]> => {
     });
     
     const headerRowIndex = findHeaderRow(firstPass.data as string[][]);
-    const relevantContent = fileContent
-      .split('\n')
-      .slice(headerRowIndex)
-      .join('\n');
+
+    // Split content into lines and slice from the header row
+    const lines = fileContent.split('\n');
+    const relevantLines = lines.slice(headerRowIndex);
+    
+    // Join the relevant lines back together, ensuring we maintain proper line endings
+    const relevantContent = relevantLines.join('\n');
 
     console.log('Parsing Salesforce CSV with headers starting at row:', headerRowIndex);
+    console.log('First line of relevant content:', relevantLines[0]);
     
     Papa.parse(relevantContent, {
       header: true,
@@ -67,6 +71,12 @@ export const parseSalesforceCSV = async (file: File): Promise<CSVData[]> => {
         if (results.errors.length > 0) {
           console.warn('Salesforce CSV parsing warnings:', results.errors);
         }
+        
+        // Log the first row to verify we're getting the correct data
+        if (results.data.length > 0) {
+          console.log('First parsed row:', results.data[0]);
+        }
+        
         console.log('Successfully parsed Salesforce CSV, row count:', results.data.length);
         resolve(results.data as CSVData[]);
       },
