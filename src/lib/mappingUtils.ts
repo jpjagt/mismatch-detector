@@ -1,11 +1,33 @@
 import { ProductMapping, StatusMapping } from './types';
 
 const DEFAULT_PRODUCT_MAPPINGS: ProductMapping[] = [
-  { salesforce: 'TruStage Advantage Whole Life (TAWL) - Preferred', incoming: 'TAWL + Good Risk' },
-  { salesforce: 'TruStage Advantage Whole Life (TAWL) - Standard', incoming: 'TAWL + Moderate Risk' },
-  { salesforce: 'TruStage Guaranteed Whole Life (GAWL)', incoming: 'GAWL' },
-  { salesforce: 'TruStage Term Band 1', incoming: 'SI Term Band 1' },
-  { salesforce: 'TruStage Term Band 2', incoming: 'SI Term Band 2' }
+  { 
+    salesforce: 'TruStage Advantage Whole Life (TAWL) - Preferred', 
+    incoming: 'TAWL',
+    includeTieredRisk: true,
+    tieredRiskValue: 'Good Risk'
+  },
+  { 
+    salesforce: 'TruStage Advantage Whole Life (TAWL) - Standard', 
+    incoming: 'TAWL',
+    includeTieredRisk: true,
+    tieredRiskValue: 'Moderate Risk'
+  },
+  { 
+    salesforce: 'TruStage Guaranteed Whole Life (GAWL)', 
+    incoming: 'GAWL',
+    includeTieredRisk: false
+  },
+  { 
+    salesforce: 'TruStage Term Band 1', 
+    incoming: 'SI Term Band 1',
+    includeTieredRisk: false
+  },
+  { 
+    salesforce: 'TruStage Term Band 2', 
+    incoming: 'SI Term Band 2',
+    includeTieredRisk: false
+  }
 ];
 
 const DEFAULT_STATUS_MAPPINGS: StatusMapping[] = [

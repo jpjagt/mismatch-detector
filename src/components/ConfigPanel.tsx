@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { ProductMapping, StatusMapping } from '@/lib/types';
 import { getProductMapping, getStatusMapping, saveProductMapping, saveStatusMapping } from '@/lib/mappingUtils';
 import { Plus, Trash2 } from 'lucide-react';
@@ -27,7 +29,12 @@ export const ConfigPanel = () => {
   };
 
   const addProductMapping = () => {
-    setProductMappings([...productMappings, { salesforce: '', incoming: '' }]);
+    setProductMappings([...productMappings, { 
+      salesforce: '', 
+      incoming: '', 
+      includeTieredRisk: false,
+      tieredRiskValue: ''
+    }]);
   };
 
   const addStatusMapping = () => {
@@ -92,32 +99,62 @@ export const ConfigPanel = () => {
         <div>
           <h3 className="text-lg font-medium mb-2">Product Mappings</h3>
           {productMappings.map((mapping, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <Input
-                placeholder="Salesforce Product"
-                value={mapping.salesforce}
-                onChange={(e) => {
-                  const newMappings = [...productMappings];
-                  newMappings[index].salesforce = e.target.value;
-                  setProductMappings(newMappings);
-                }}
-              />
-              <Input
-                placeholder="Incoming Product"
-                value={mapping.incoming}
-                onChange={(e) => {
-                  const newMappings = [...productMappings];
-                  newMappings[index].incoming = e.target.value;
-                  setProductMappings(newMappings);
-                }}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => removeProductMapping(index)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <div key={index} className="space-y-2 mb-4 p-4 border rounded-lg">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Salesforce Product"
+                  value={mapping.salesforce}
+                  onChange={(e) => {
+                    const newMappings = [...productMappings];
+                    newMappings[index].salesforce = e.target.value;
+                    setProductMappings(newMappings);
+                  }}
+                />
+                <Input
+                  placeholder="Incoming Product"
+                  value={mapping.incoming}
+                  onChange={(e) => {
+                    const newMappings = [...productMappings];
+                    newMappings[index].incoming = e.target.value;
+                    setProductMappings(newMappings);
+                  }}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeProductMapping(index)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`tieredRisk-${index}`}
+                    checked={mapping.includeTieredRisk}
+                    onCheckedChange={(checked) => {
+                      const newMappings = [...productMappings];
+                      newMappings[index].includeTieredRisk = checked as boolean;
+                      setProductMappings(newMappings);
+                    }}
+                  />
+                  <Label htmlFor={`tieredRisk-${index}`}>Include Tiered Risk</Label>
+                </div>
+                
+                {mapping.includeTieredRisk && (
+                  <Input
+                    placeholder="Expected Tiered Risk Value"
+                    value={mapping.tieredRiskValue}
+                    onChange={(e) => {
+                      const newMappings = [...productMappings];
+                      newMappings[index].tieredRiskValue = e.target.value;
+                      setProductMappings(newMappings);
+                    }}
+                    className="flex-1 ml-4"
+                  />
+                )}
+              </div>
             </div>
           ))}
           <Button

@@ -37,13 +37,13 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
       return;
     }
 
-    // Get values with proper null checks
     const salesforceStatus = salesforce.ApplicationStatus?.trim() || '';
     const incomingStatus = incoming.Status?.trim() || '';
     const salesforcePremium = salesforce.PremiumIssued?.trim() || '$0';
     const incomingPremium = incoming.PremiumAmount?.trim() || '$0';
     const salesforceProduct = salesforce.ProductIssued?.trim() || '';
     const incomingProductType = incoming.ProductType?.trim() || '';
+    const incomingTieredRisk = incoming.TieredRisk?.trim() || '';
 
     console.log('Comparing records:', {
       salesforce: {
@@ -56,27 +56,36 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
         policyId: incoming.PolicyId || incoming.ApplicationID,
         premium: incomingPremium,
         status: incomingStatus,
-        product: incomingProductType
+        product: incomingProductType,
+        tieredRisk: incomingTieredRisk
       }
     });
 
-    // Parse premium values with proper error handling
     const sfPremiumValue = parseFloat((salesforcePremium || '').replace(/[$,]/g, '')) || 0;
     const inPremiumValue = parseFloat((incomingPremium || '').replace(/[$,]/g, '')) || 0;
 
-    // Check status mapping
     const statusMismatch = salesforceStatus !== incomingStatus && 
       !statusMappings.some(m => 
         m.salesforce.toLowerCase() === salesforceStatus.toLowerCase() && 
         m.incoming.toLowerCase() === incomingStatus.toLowerCase()
       );
 
-    // Compare product strings without combining TieredRisk
-    const productMismatch = salesforceProduct !== incomingProductType && 
-      !productMappings.some(m => 
-        m.salesforce.toLowerCase() === salesforceProduct.toLowerCase() && 
-        m.incoming.toLowerCase() === incomingProductType.toLowerCase()
-      );
+    // Enhanced product comparison logic
+    const productMismatch = !productMappings.some(mapping => {
+      const productMatches = 
+        mapping.salesforce.toLowerCase() === salesforceProduct.toLowerCase() && 
+        mapping.incoming.toLowerCase() === incomingProductType.toLowerCase();
+
+      if (!productMatches) return false;
+
+      // If tiered risk is included in the mapping, check it matches
+      if (mapping.includeTieredRisk) {
+        return mapping.tieredRiskValue?.toLowerCase() === incomingTieredRisk.toLowerCase();
+      }
+
+      // If tiered risk is not included in the mapping, we don't care about its value
+      return true;
+    });
 
     const premiumMismatch = Math.abs(sfPremiumValue - inPremiumValue) > 0.01;
 
@@ -88,7 +97,7 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
         salesforcePremium: salesforcePremium,
         incomingPremium: incomingPremium,
         salesforceProduct: salesforceProduct,
-        incomingProduct: incomingProductType,
+        incomingProduct: incomingProductType + (incomingTieredRisk ? ` + ${incomingTieredRisk}` : ''),
         statusMismatch,
         premiumMismatch,
         productMismatch

@@ -1,6 +1,8 @@
 export interface ProductMapping {
   salesforce: string;
   incoming: string;
+  includeTieredRisk?: boolean;
+  tieredRiskValue?: string;
 }
 
 export interface StatusMapping {
