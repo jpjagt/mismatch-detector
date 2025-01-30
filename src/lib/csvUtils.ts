@@ -25,30 +25,43 @@ const findHeaderRow = (rows: string[][]): number => {
 };
 
 export const parseCSV = async (file: File): Promise<CSVData[]> => {
-  // First read the file to find the header row
-  const firstPassText = await file.text();
-  const firstPassResults = Papa.parse(firstPassText, { header: false });
-  const headerRowIndex = findHeaderRow(firstPassResults.data as string[][]);
-
-  // Create a new File object with the correct starting point
-  const rows = firstPassText.split('\n');
-  const relevantRows = rows.slice(headerRowIndex);
-  const newFileContent = relevantRows.join('\n');
-  const newFile = new File([newFileContent], file.name, { type: file.type });
-
   return new Promise((resolve, reject) => {
-    Papa.parse(newFile, {
-      header: true,
-      transform: (value) => value.trim(),
-      skipEmptyLines: true,
-      transformHeader: (header) => header.trim(),
-      complete: (results) => {
-        resolve(results.data as CSVData[]);
-      },
-      error: (error) => {
-        reject(error);
+    // Read the file as text first
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (!event.target?.result) {
+        reject(new Error('Failed to read file'));
+        return;
       }
-    });
+
+      const csvText = event.target.result as string;
+      // First parse to find header row
+      const firstPass = Papa.parse(csvText, { header: false });
+      const headerRowIndex = findHeaderRow(firstPass.data as string[][]);
+
+      // Skip rows before header
+      const relevantRows = csvText.split('\n').slice(headerRowIndex).join('\n');
+
+      // Now parse with the correct starting point
+      Papa.parse(relevantRows, {
+        header: true,
+        transform: (value) => value.trim(),
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
+        complete: (results) => {
+          resolve(results.data as CSVData[]);
+        },
+        error: (error) => {
+          reject(error);
+        }
+      });
+    };
+
+    reader.onerror = () => {
+      reject(new Error('Failed to read file'));
+    };
+
+    reader.readAsText(file);
   });
 };
 
