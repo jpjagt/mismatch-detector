@@ -32,21 +32,8 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
       return sfPolicyNum === incomingPolicyId;
     });
     
-    // If no matching Salesforce record is found, add it as a mismatch
     if (!salesforce) {
       console.log('No matching Salesforce record found for PolicyId:', incoming.PolicyId || incoming.ApplicationID);
-      results.push({
-        policyId: incoming.PolicyId || incoming.ApplicationID || '',
-        salesforceStatus: 'Not Found',
-        incomingStatus: incoming.Status?.trim() || '',
-        salesforcePremium: '$0',
-        incomingPremium: incoming.PremiumAmount?.trim() || '$0',
-        salesforceProduct: 'Not Found',
-        incomingProduct: incoming.ProductType?.trim() + (incoming.TieredRisk ? ` + ${incoming.TieredRisk}` : ''),
-        statusMismatch: true,
-        premiumMismatch: true,
-        productMismatch: true
-      });
       return;
     }
 
@@ -102,22 +89,23 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
 
     const premiumMismatch = Math.abs(sfPremiumValue - inPremiumValue) > 0.01;
 
-    // Always add the record to results, regardless of whether there are mismatches
-    results.push({
-      policyId: incoming.PolicyId || incoming.ApplicationID,
-      salesforceStatus: salesforceStatus,
-      incomingStatus: incomingStatus,
-      salesforcePremium: salesforcePremium,
-      incomingPremium: incomingPremium,
-      salesforceProduct: salesforceProduct,
-      incomingProduct: incomingProductType + (incomingTieredRisk ? ` + ${incomingTieredRisk}` : ''),
-      statusMismatch,
-      premiumMismatch,
-      productMismatch
-    });
+    if (statusMismatch || productMismatch || premiumMismatch) {
+      results.push({
+        policyId: incoming.PolicyId || incoming.ApplicationID,
+        salesforceStatus: salesforceStatus,
+        incomingStatus: incomingStatus,
+        salesforcePremium: salesforcePremium,
+        incomingPremium: incomingPremium,
+        salesforceProduct: salesforceProduct,
+        incomingProduct: incomingProductType + (incomingTieredRisk ? ` + ${incomingTieredRisk}` : ''),
+        statusMismatch,
+        premiumMismatch,
+        productMismatch
+      });
+    }
   });
 
-  console.log('Comparison complete. Total records:', results.length);
+  console.log('Comparison complete. Found mismatches:', results.length);
   return results;
 };
 
