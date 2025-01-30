@@ -40,11 +40,26 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
         result.productMismatch
       );
 
+  // Calculate statistics
   const mismatchCount = results.filter(result => 
     result.statusMismatch || 
     result.premiumMismatch || 
     result.productMismatch
   ).length;
+
+  const notInSalesforceCount = results.filter(result => 
+    result.salesforceStatus === 'Not Found'
+  ).length;
+
+  const matchingRecords = results.filter(result => 
+    !result.statusMismatch && 
+    !result.premiumMismatch && 
+    !result.productMismatch &&
+    result.salesforceStatus !== 'Not Found'
+  ).length;
+
+  const totalRecords = results.length;
+  const matchPercentage = ((matchingRecords / totalRecords) * 100).toFixed(1);
 
   const handleCopyPolicyId = async (policyId: string) => {
     try {
@@ -66,11 +81,17 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold">
-            Mismatches Found: {mismatchCount}
-          </h2>
+      <div className="flex justify-between items-start">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold">Statistics</h2>
+            <ul className="space-y-1 text-sm text-gray-600">
+              <li>Total records in incoming file: {totalRecords}</li>
+              <li>Records with mismatches: {mismatchCount}</li>
+              <li>Records not found in Salesforce: {notInSalesforceCount}</li>
+              <li>Perfectly matching records: {matchingRecords} ({matchPercentage}%)</li>
+            </ul>
+          </div>
           <div className="flex items-center space-x-2">
             <Checkbox
               id="showMatches"
