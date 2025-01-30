@@ -10,12 +10,16 @@ import { ComparisonResult } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Download } from "lucide-react";
 import { exportToCSV } from "@/lib/csvUtils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useState } from "react";
 
 interface ResultsTableProps {
   results: ComparisonResult[];
 }
 
 export const ResultsTable = ({ results }: ResultsTableProps) => {
+  const [showMatches, setShowMatches] = useState(false);
+
   if (results.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -24,12 +28,41 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
     );
   }
 
+  const filteredResults = showMatches 
+    ? results 
+    : results.filter(result => 
+        result.statusMismatch || 
+        result.premiumMismatch || 
+        result.productMismatch
+      );
+
+  const mismatchCount = results.filter(result => 
+    result.statusMismatch || 
+    result.premiumMismatch || 
+    result.productMismatch
+  ).length;
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">
-          Mismatches Found: {results.length}
-        </h2>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">
+            Mismatches Found: {mismatchCount}
+          </h2>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="showMatches"
+              checked={showMatches}
+              onCheckedChange={(checked) => setShowMatches(checked as boolean)}
+            />
+            <label
+              htmlFor="showMatches"
+              className="text-sm text-gray-600 cursor-pointer"
+            >
+              Show matching rows
+            </label>
+          </div>
+        </div>
         <Button onClick={() => exportToCSV(results)}>
           <Download className="mr-2 h-4 w-4" />
           Export CSV
@@ -48,7 +81,7 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {results.map((result) => (
+            {filteredResults.map((result) => (
               <TableRow key={result.policyId}>
                 <TableCell>{result.policyId}</TableCell>
                 <TableCell>
