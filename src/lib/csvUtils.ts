@@ -25,43 +25,47 @@ const findHeaderRow = (rows: string[][]): number => {
 };
 
 export const parseCSV = async (file: File): Promise<CSVData[]> => {
-  return new Promise((resolve, reject) => {
-    // Read the file as text first
+  const fileContent = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = (event) => {
-      if (!event.target?.result) {
-        reject(new Error('Failed to read file'));
-        return;
+    reader.onload = (e) => {
+      if (typeof e.target?.result === 'string') {
+        resolve(e.target.result);
+      } else {
+        reject(new Error('Failed to read file as text'));
       }
-
-      const csvText = event.target.result as string;
-      // First parse to find header row
-      const firstPass = Papa.parse(csvText, { header: false });
-      const headerRowIndex = findHeaderRow(firstPass.data as string[][]);
-
-      // Skip rows before header
-      const relevantRows = csvText.split('\n').slice(headerRowIndex).join('\n');
-
-      // Now parse with the correct starting point
-      Papa.parse(relevantRows, {
-        header: true,
-        transform: (value) => value.trim(),
-        skipEmptyLines: true,
-        transformHeader: (header) => header.trim(),
-        complete: (results) => {
-          resolve(results.data as CSVData[]);
-        },
-        error: (error) => {
-          reject(error);
-        }
-      });
     };
-
-    reader.onerror = () => {
-      reject(new Error('Failed to read file'));
-    };
-
+    reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsText(file);
+  });
+
+  // First parse to find header row
+  const firstPass = Papa.parse(fileContent, { 
+    header: false,
+    skipEmptyLines: 'greedy'
+  });
+  
+  const headerRowIndex = findHeaderRow(firstPass.data as string[][]);
+  const relevantContent = fileContent
+    .split('\n')
+    .slice(headerRowIndex)
+    .join('\n');
+
+  return new Promise((resolve, reject) => {
+    Papa.parse(relevantContent, {
+      header: true,
+      skipEmptyLines: 'greedy',
+      transform: (value) => value.trim(),
+      transformHeader: (header) => header.trim(),
+      complete: (results) => {
+        if (results.errors.length > 0) {
+          console.warn('CSV parsing warnings:', results.errors);
+        }
+        resolve(results.data as CSVData[]);
+      },
+      error: (error) => {
+        reject(new Error(`Failed to parse CSV: ${error.message}`));
+      }
+    });
   });
 };
 
