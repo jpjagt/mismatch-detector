@@ -35,16 +35,18 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
   const filteredResults = showMatches 
     ? results 
     : results.filter(result => 
-        result.statusMismatch || 
+        (result.statusMismatch || 
         result.premiumMismatch || 
-        result.productMismatch
+        result.productMismatch) &&
+        result.salesforceStatus !== 'Not Found'
       );
 
   // Calculate statistics
   const mismatchCount = results.filter(result => 
-    result.statusMismatch || 
+    (result.statusMismatch || 
     result.premiumMismatch || 
-    result.productMismatch
+    result.productMismatch) &&
+    result.salesforceStatus !== 'Not Found'
   ).length;
 
   const notInSalesforceCount = results.filter(result => 
