@@ -21,6 +21,7 @@ interface ResultsTableProps {
 export const ResultsTable = ({ results }: ResultsTableProps) => {
   const [showMatches, setShowMatches] = useState(false);
   const [copiedRows, setCopiedRows] = useState<Set<string>>(new Set());
+  const [hasCopied, setHasCopied] = useState(false);
   const { toast } = useToast();
 
   if (results.length === 0) {
@@ -49,6 +50,7 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
     try {
       await navigator.clipboard.writeText(policyId);
       setCopiedRows(prev => new Set([...prev, policyId]));
+      setHasCopied(true);
       toast({
         title: "Copied!",
         description: `Policy ID ${policyId} copied to clipboard`,
@@ -102,10 +104,7 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
           </TableHeader>
           <TableBody>
             {filteredResults.map((result) => (
-              <TableRow 
-                key={result.policyId}
-                className={copiedRows.has(result.policyId) ? "bg-gray-50" : ""}
-              >
+              <TableRow key={result.policyId}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     {result.policyId}
@@ -117,6 +116,22 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
                     >
                       <ClipboardCopy className="h-4 w-4" />
                     </Button>
+                    {hasCopied && (
+                      <Checkbox
+                        checked={copiedRows.has(result.policyId)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setCopiedRows(prev => new Set([...prev, result.policyId]));
+                          } else {
+                            setCopiedRows(prev => {
+                              const newSet = new Set(prev);
+                              newSet.delete(result.policyId);
+                              return newSet;
+                            });
+                          }
+                        }}
+                      />
+                    )}
                   </div>
                 </TableCell>
                 <TableCell>
