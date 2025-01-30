@@ -8,10 +8,11 @@ import {
 } from "@/components/ui/table";
 import { ComparisonResult } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, ClipboardCopy } from "lucide-react";
 import { exportToCSV } from "@/lib/csvUtils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 interface ResultsTableProps {
   results: ComparisonResult[];
@@ -19,6 +20,8 @@ interface ResultsTableProps {
 
 export const ResultsTable = ({ results }: ResultsTableProps) => {
   const [showMatches, setShowMatches] = useState(false);
+  const [copiedRows, setCopiedRows] = useState<Set<string>>(new Set());
+  const { toast } = useToast();
 
   if (results.length === 0) {
     return (
@@ -41,6 +44,23 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
     result.premiumMismatch || 
     result.productMismatch
   ).length;
+
+  const handleCopyPolicyId = async (policyId: string) => {
+    try {
+      await navigator.clipboard.writeText(policyId);
+      setCopiedRows(prev => new Set([...prev, policyId]));
+      toast({
+        title: "Copied!",
+        description: `Policy ID ${policyId} copied to clipboard`,
+      });
+    } catch (err) {
+      toast({
+        title: "Failed to copy",
+        description: "Could not copy policy ID to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -82,8 +102,23 @@ export const ResultsTable = ({ results }: ResultsTableProps) => {
           </TableHeader>
           <TableBody>
             {filteredResults.map((result) => (
-              <TableRow key={result.policyId}>
-                <TableCell>{result.policyId}</TableCell>
+              <TableRow 
+                key={result.policyId}
+                className={copiedRows.has(result.policyId) ? "bg-gray-50" : ""}
+              >
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {result.policyId}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleCopyPolicyId(result.policyId)}
+                      className="h-8 w-8"
+                    >
+                      <ClipboardCopy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </TableCell>
                 <TableCell>
                   <div className={result.statusMismatch ? "text-red-600" : ""}>
                     {result.salesforceStatus} / {result.incomingStatus}
