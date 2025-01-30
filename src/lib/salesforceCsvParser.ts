@@ -4,20 +4,24 @@ import { CSVData } from './types';
 const EXPECTED_HEADERS = ['PolicyId', 'ApplicationStatus', 'PremiumIssued', 'ProductIssued'];
 
 const findHeaderRow = (rows: string[][]): number => {
-  console.log('Searching for Salesforce headers in rows:', rows.slice(0, 3));
-  for (let i = 0; i < rows.length; i++) {
+  console.log('Searching for Salesforce headers in first 20 rows:', rows.slice(0, 3));
+  
+  // Search through first 20 rows
+  for (let i = 0; i < Math.min(20, rows.length); i++) {
     const row = rows[i];
-    const rowHeaders = row.map(header => header.toLowerCase());
-    const hasAllHeaders = EXPECTED_HEADERS.every(header => 
-      rowHeaders.includes(header.toLowerCase())
-    );
-    
-    if (hasAllHeaders) {
+    if (!row || row.length === 0) continue;
+
+    const rowHeaders = row.map(header => header?.toLowerCase()?.trim() || '');
+    console.log(`Checking row ${i} headers:`, rowHeaders);
+
+    // Check if this row contains "Policy #" as this is a key identifier
+    if (rowHeaders.some(header => header.includes('policy') && header.includes('#'))) {
       console.log('Found Salesforce headers at row:', i);
       return i;
     }
   }
-  console.log('No Salesforce headers found, defaulting to row 0');
+  
+  console.log('No Salesforce headers found in first 20 rows, defaulting to row 0');
   return 0;
 };
 
