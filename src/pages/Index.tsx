@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FileUpload } from '@/components/FileUpload';
 import { ConfigPanel } from '@/components/ConfigPanel';
 import { ResultsTable } from '@/components/ResultsTable';
-import { parseCSV, compareData } from '@/lib/csvUtils';
+import { parseSalesforceCSV, parseIncomingCSV, compareData } from '@/lib/csvUtils';
 import { ComparisonResult, CSVData } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,7 +17,8 @@ const Index = () => {
 
   const handleSalesforceFile = async (file: File) => {
     try {
-      const data = await parseCSV(file);
+      console.log('Processing Salesforce file:', file.name);
+      const data = await parseSalesforceCSV(file);
       setSalesforceData(data);
       setSalesforceFile(file.name);
       toast({
@@ -29,6 +30,7 @@ const Index = () => {
         setResults(comparisonResults);
       }
     } catch (error) {
+      console.error('Error processing Salesforce file:', error);
       toast({
         title: "Error",
         description: "Failed to parse Salesforce CSV file.",
@@ -39,7 +41,8 @@ const Index = () => {
 
   const handleIncomingFile = async (file: File) => {
     try {
-      const data = await parseCSV(file);
+      console.log('Processing Incoming file:', file.name);
+      const data = await parseIncomingCSV(file);
       setIncomingData(data);
       setIncomingFile(file.name);
       toast({
@@ -51,6 +54,7 @@ const Index = () => {
         setResults(comparisonResults);
       }
     } catch (error) {
+      console.error('Error processing Incoming file:', error);
       toast({
         title: "Error",
         description: "Failed to parse incoming CSV file.",

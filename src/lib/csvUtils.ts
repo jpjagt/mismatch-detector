@@ -1,73 +1,9 @@
-import Papa from 'papaparse';
 import { CSVData, ComparisonResult } from './types';
 import { getProductMapping, getStatusMapping } from './mappingUtils';
+import { parseSalesforceCSV } from './salesforceCsvParser';
+import { parseIncomingCSV } from './incomingCsvParser';
 
-const EXPECTED_SF_HEADERS = ['PolicyId', 'ApplicationStatus', 'PremiumIssued', 'ProductIssued'];
-const EXPECTED_INCOMING_HEADERS = ['PolicyId', 'Status', 'PremiumAmount', 'ProductType', 'TieredRisk'];
-
-const findHeaderRow = (rows: string[][]): number => {
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    // Check if this row contains all expected headers (case-insensitive)
-    const rowHeaders = row.map(header => header.toLowerCase());
-    const isSFHeaders = EXPECTED_SF_HEADERS.every(header => 
-      rowHeaders.includes(header.toLowerCase())
-    );
-    const isIncomingHeaders = EXPECTED_INCOMING_HEADERS.every(header => 
-      rowHeaders.includes(header.toLowerCase())
-    );
-    
-    if (isSFHeaders || isIncomingHeaders) {
-      return i;
-    }
-  }
-  return 0; // Default to first row if no headers found
-};
-
-export const parseCSV = async (file: File): Promise<CSVData[]> => {
-  const fileContent = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (typeof e.target?.result === 'string') {
-        resolve(e.target.result);
-      } else {
-        reject(new Error('Failed to read file as text'));
-      }
-    };
-    reader.onerror = () => reject(new Error('Failed to read file'));
-    reader.readAsText(file);
-  });
-
-  // First parse to find header row
-  const firstPass = Papa.parse(fileContent, { 
-    header: false,
-    skipEmptyLines: 'greedy'
-  });
-  
-  const headerRowIndex = findHeaderRow(firstPass.data as string[][]);
-  const relevantContent = fileContent
-    .split('\n')
-    .slice(headerRowIndex)
-    .join('\n');
-
-  return new Promise((resolve, reject) => {
-    Papa.parse(relevantContent, {
-      header: true,
-      skipEmptyLines: 'greedy',
-      transform: (value) => value.trim(),
-      transformHeader: (header) => header.trim(),
-      complete: (results) => {
-        if (results.errors.length > 0) {
-          console.warn('CSV parsing warnings:', results.errors);
-        }
-        resolve(results.data as CSVData[]);
-      },
-      error: (error) => {
-        reject(new Error(`Failed to parse CSV: ${error.message}`));
-      }
-    });
-  });
-};
+export { parseSalesforceCSV, parseIncomingCSV };
 
 export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]): ComparisonResult[] => {
   const results: ComparisonResult[] = [];
