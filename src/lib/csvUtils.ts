@@ -22,7 +22,6 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
     const salesforce = salesforceData.find(sf => {
       const sfPolicyNum = sf['Policy #']?.trim();
       const incomingAppId = incoming.ApplicationID?.trim();
-      console.log('Comparing:', { sfPolicyNum, incomingAppId });
       return sfPolicyNum === incomingAppId;
     });
     
