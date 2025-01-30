@@ -14,9 +14,11 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
     incomingFirstRow: incomingData[0]
   });
 
-  // Create debug tables
-  console.table('Salesforce Data Sample (First 5 rows):', salesforceData.slice(0, 5));
-  console.table('Incoming Data Sample (First 5 rows):', incomingData.slice(0, 5));
+  // Create debug tables with proper typing
+  console.log('Salesforce Data Sample (First 5 rows):');
+  console.table(salesforceData.slice(0, 5));
+  console.log('Incoming Data Sample (First 5 rows):');
+  console.table(incomingData.slice(0, 5));
   
   const results: ComparisonResult[] = [];
   const productMappings = getProductMapping();
@@ -42,7 +44,6 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
     const incomingPremium = incoming.PremiumAmount?.trim() || '$0';
     const salesforceProduct = salesforce.ProductIssued?.trim() || '';
     const incomingProductType = incoming.ProductType?.trim() || '';
-    const incomingTieredRisk = incoming.TieredRisk?.trim() || '';
 
     console.log('Comparing records:', {
       salesforce: {
@@ -55,7 +56,7 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
         policyId: incoming.PolicyId || incoming.ApplicationID,
         premium: incomingPremium,
         status: incomingStatus,
-        product: `${incomingProductType}${incomingTieredRisk ? ' + ' + incomingTieredRisk : ''}`
+        product: incomingProductType
       }
     });
 
@@ -70,13 +71,11 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
         m.incoming.toLowerCase() === incomingStatus.toLowerCase()
       );
 
-    // Construct and compare product strings
-    const incomingProductFull = `${incomingProductType}${incomingTieredRisk ? ' + ' + incomingTieredRisk : ''}`;
-    
-    const productMismatch = salesforceProduct !== incomingProductFull && 
+    // Compare product strings without combining TieredRisk
+    const productMismatch = salesforceProduct !== incomingProductType && 
       !productMappings.some(m => 
         m.salesforce.toLowerCase() === salesforceProduct.toLowerCase() && 
-        m.incoming.toLowerCase() === incomingProductFull.toLowerCase()
+        m.incoming.toLowerCase() === incomingProductType.toLowerCase()
       );
 
     const premiumMismatch = Math.abs(sfPremiumValue - inPremiumValue) > 0.01;
@@ -89,7 +88,7 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
         salesforcePremium: salesforcePremium,
         incomingPremium: incomingPremium,
         salesforceProduct: salesforceProduct,
-        incomingProduct: incomingProductFull,
+        incomingProduct: incomingProductType,
         statusMismatch,
         premiumMismatch,
         productMismatch
