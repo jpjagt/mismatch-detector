@@ -32,8 +32,21 @@ export const compareData = (salesforceData: CSVData[], incomingData: CSVData[]):
       return sfPolicyNum === incomingPolicyId;
     });
     
+    // If no matching Salesforce record is found, add it as a mismatch
     if (!salesforce) {
       console.log('No matching Salesforce record found for PolicyId:', incoming.PolicyId || incoming.ApplicationID);
+      results.push({
+        policyId: incoming.PolicyId || incoming.ApplicationID || '',
+        salesforceStatus: 'Not Found',
+        incomingStatus: incoming.Status?.trim() || '',
+        salesforcePremium: '$0',
+        incomingPremium: incoming.PremiumAmount?.trim() || '$0',
+        salesforceProduct: 'Not Found',
+        incomingProduct: incoming.ProductType?.trim() + (incoming.TieredRisk ? ` + ${incoming.TieredRisk}` : ''),
+        statusMismatch: true,
+        premiumMismatch: true,
+        productMismatch: true
+      });
       return;
     }
 
